@@ -62,20 +62,35 @@ queries = open("Queries.txt","w")
 queries.seek(0)
 queries.truncate() # empty file before writing
 
-# go through each galaxy
-potentials = []
+lenses = []
 
 # go through each galaxy
 #for g in galaxies:
-g = galaxies[0]
-#search through all non-galaxies
-for tar in targets:
-    dist = degreeToArcSec(g.ra, tar.ra, g.dec, tar.dec)
-    print(dist)
-    if dist <= max_distance and g.z == tar.z: #if in the neighborhood of 15 arcs or less
-        potentials.append(tar)
+for g in galaxies:
+  #search through all non-galaxies
+  potentials = [] #lensing candidates
+  for tar in targets:
+      dist = degreeToArcSec(g.ra, tar.ra, g.dec, tar.dec)
+      #print(dist)
+      if dist <= max_distance and dist >= 0: #if in the neighborhood of 15 arcs or less AND positive
+          potentials.append(tar) # find all light sources that are farther from earth than neighboring galaxy
+
+  if len(potentials) > 0:
+    for i in range(0, len(potentials)):
+      print(str(i) + ": " + str(potentials[i].iD))
+  # see if any of these light sources have the same red shift
+  for i in range(0, len(potentials)):
+    for j in range(i+1, len(potentials)):
+      if potentials[i].z == potentials[j].z: # if so, its a lensing incident
+        if potentials[i].z not in lenses: # only add to list if not alreaday there
+          lenses.append(potentials[i].z)
+        if poentials[j].z not in lenses:
+          lenses.append(potentials[j].z)
 
 queries.close()
+
+for l in lenses:
+  print(l.iD)
 
 print("donezo")
 
