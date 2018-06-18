@@ -22,7 +22,7 @@ class astrObj():
         self.iD = iD
         self.ra = float(ra)
         self.dec = float(dec)
-        self.z = float(z)
+        self.z = round(float(z), 4)
 
 def degreeToArcSec(ra1, ra2, dec1, dec2):
    #convert all coordinates to radians
@@ -53,8 +53,8 @@ with open('./'+file_name) as csvfile:
             obj = astrObj(row[0], row[1], row[2], row[3])
             if row[4] == 'GALAXY': #store all Galaxies in a separate array
                 galaxies.append(obj)
-            else:
-                targets.append(obj) 
+            #else:
+            targets.append(obj) 
     	reuseCtr+=1
 
 queries = open("Queries.txt","w") 
@@ -70,14 +70,25 @@ for g in galaxies:
   #search through all non-galaxies
   potentials = [] #lensing candidates
   for tar in targets:
+    if tar.iD == g.iD:
+      continue
+    else:
       dist = degreeToArcSec(g.ra, tar.ra, g.dec, tar.dec)
       #print(dist)
       if dist <= max_distance and dist >= 0: #if in the neighborhood of 15 arcs or less AND positive
+        if tar.z == g.z:
+          if tar not in lenses:
+            lenses.append(tar)
+          if g not in lenses:
+            lenses.append(g)
+        else:
           potentials.append(tar) # find all light sources that are farther from earth than neighboring galaxy
 
   if len(potentials) > 0:
     for i in range(0, len(potentials)):
-      print(str(i) + ": " + str(potentials[i].iD))
+      print(str(i+1) + ": " + "Potential: " + str(potentials[i].iD) + " Galaxy: " + str(g.iD))
+    print("\n")
+
   # see if any of these light sources have the same red shift
   for i in range(0, len(potentials)):
     for j in range(i+1, len(potentials)):
@@ -90,10 +101,4 @@ for g in galaxies:
 queries.close()
 
 for l in lenses:
-  print(l.iD)
-
-print("donezo")
-
-
-
-  
+  print("LENSE " + str(l.iD))
