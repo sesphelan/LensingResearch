@@ -90,7 +90,7 @@ for g in galaxies:
     for i in range(0, len(potentials)):
       print(str(i+1) + ": " + "Potential: " + str(potentials[i].iD) + " Galaxy: " + str(g.iD))
     print("\n")'''
-
+  
   # see if any of these light sources have the same red shift
   for i in range(0, len(potentials)):
     for j in range(i+1, len(potentials)):
