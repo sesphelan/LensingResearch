@@ -1,0 +1,10 @@
+casjobs run 'SELECT ALL specObjID,ra,dec,z,class INTO mydb.Models_CrossTest FROM SpecObj where specObjID=1'
+
+casjobs run 'SELECT ALL specObjID,ra,dec,z,class INTO mydb.Models_CrossTest FROM SpecObj where specObjID=2'
+
+casjobs run 'SELECT ALL specObjID,ra,dec,z,class INTO mydb.Models_CrossTest FROM SpecObj where specObjID=3'
+
+casjobs run 'SELECT ALL specObjID,ra,dec,z,class INTO mydb.Models_CrossTest FROM SpecObj where specObjID=4'
+
+casjobs extract -b Models_CrossTest -F -type CSV -d ./Models/
+
