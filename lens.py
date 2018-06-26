@@ -15,6 +15,8 @@ if len(sys.argv) > 1: # can use any csv file, just make sure file name is includ
 else: # if no argument, use Classes.csv file as default
     file_name = "Top5000.csv"
 
+prefix = file_name.split(".")[0]
+
 
 # define class for astro-objects
 class astrObj():
@@ -22,7 +24,7 @@ class astrObj():
         self.iD = iD
         self.ra = float(ra)
         self.dec = float(dec)
-        self.z = round(float(z), 4)
+        self.z = round(float(z), 2)
         self.type = objType
         self.gID = ""
 
@@ -60,9 +62,6 @@ with open('./'+file_name) as csvfile:
     	reuseCtr+=1
 
 queries = open("Queries.txt","w") 
-
-queries.seek(0)
-queries.truncate() # empty file before writing
 
 lenses = []
 
@@ -102,8 +101,19 @@ for g in galaxies:
           potentials[j].gID = g.iD
           lenses.append(potentials[j])
 
-queries.close()
-
 #print out lensing incidents
+counter = 0
 for l in lenses:
   print("ID: " + str(l.iD) + " Type: " + l.type + " Galaxy ID: " + l.gID)
+
+  if counter == 0:
+    # add to myDB on CasJobs
+    queries.write("casjobs run 'SELECT ALL specObjID,ra,dec,z,class INTO mydb.Models_" + prefix + " FROM SpecObj where specObjID="+str(l.iD)+"'" + "\n\n")
+  else:
+    queries.write("casjobs run 'INSERT INTO mydb.Models_" + prefix + " SELECT ALL specObjID,ra,dec,z,class FROM SpecObj where specObjID="+str(l.iD)+"'" + "\n\n")
+  # download table locally
+
+  counter += 1
+
+queries.write("casjobs extract -b Models_" + prefix + " -F -type CSV -d ./Models/\n\n")
+queries.close()
