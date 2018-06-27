@@ -56,9 +56,9 @@ with open('./'+file_name) as csvfile:
     	if (reuseCtr!=0):
             obj = astrObj(row[0], row[1], row[2], row[3], row[4])
             if row[4] == 'GALAXY': #store all Galaxies in a separate array
-                galaxies.append(obj)
-            #else:
-            targets.append(obj) 
+              galaxies.append(obj)
+            else: # store all non-galaxies in targets
+              targets.append(obj) 
     	reuseCtr+=1
 
 queries = open("Queries.txt","w") 
@@ -70,50 +70,50 @@ for g in galaxies:
   #search through all light sources
   potentials = [] #lensing candidates
   for tar in targets:
-    if tar.iD == g.iD: # make sure target does not equal galaxy
-      continue
-    else:
-      dist = degreeToArcSec(g.ra, tar.ra, g.dec, tar.dec)
-      if dist <= max_distance and dist >= 0: #if in the neighborhood of 15 arcs or less AND positive
-        if tar.z == g.z: # if same red shift as galaxy
-          if tar not in lenses:
-            tar.gID = g.iD
-            lenses.append(tar) # IS a lense
-          if g not in lenses:
-            g.gID = g.iD
-            lenses.append(g)
-        else:
-          potentials.append(tar) # find all light sources that are farther from earth than neighboring galaxy
-  '''
-  if len(potentials) > 0:
-    for i in range(0, len(potentials)):
-      print(str(i+1) + ": " + "Potential: " + str(potentials[i].iD) + " Galaxy: " + str(g.iD))
-    print("\n")'''
+    
+    dist = degreeToArcSec(g.ra, tar.ra, g.dec, tar.dec)
+    if dist <= max_distance and dist >= 0: #if in the neighborhood of 15 arcs or less AND positive
+      potentials.append(tar) # find all light sources that are farther from earth than neighboring galaxy
+
+  tempList = []
+  tempList.append(g)
   
   # see if any of these light sources have the same red shift
   for i in range(0, len(potentials)):
     for j in range(i+1, len(potentials)):
       if potentials[i].z == potentials[j].z: # if so, its a lensing incident
-        if potentials[i] not in lenses: # only add to list if not alreaday there
+        if potentials[i] not in tempList: # only add to list if not alreaday there
           potentials[i].gID = g.iD
-          lenses.append(potentials[i])
-        if potentials[j] not in lenses:
+          tempList.append(potentials[i])
+        if potentials[j] not in tempList:
           potentials[j].gID = g.iD
-          lenses.append(potentials[j])
+          tempList.append(potentials[j])
+
+  if len(tempList) > 1:
+    lenses.append(tempList)
 
 #print out lensing incidents
-counter = 0
+#counter = 0
+secCounter = 0
 for l in lenses:
-  print("ID: " + str(l.iD) + " Type: " + l.type + " Galaxy ID: " + l.gID)
+  counter = 0
+  for i in range(0, len(l)):
+    if i == 0:
+      print("LENSE -- ID: " + str(l[i].iD))
+    else:
+      print("LENSED OBJECT -- ID: " + str(l[i].iD) + " Type: " + l[i].type)
 
-  if counter == 0:
-    # add to myDB on CasJobs
-    queries.write("casjobs run 'SELECT ALL specObjID,ra,dec,z,class INTO mydb.Models_" + prefix + " FROM SpecObj where specObjID="+str(l.iD)+"'" + "\n\n")
-  else:
-    queries.write("casjobs run 'INSERT INTO mydb.Models_" + prefix + " SELECT ALL specObjID,ra,dec,z,class FROM SpecObj where specObjID="+str(l.iD)+"'" + "\n\n")
-  # download table locally
+    
+    if counter == 0:
+      # add to myDB on CasJobs
+      queries.write("casjobs run 'SELECT ALL specObjID,ra,dec,z,class INTO mydb.Models_" + prefix + "_" + str(secCounter) + " FROM SpecObj where specObjID="+str(l[i].iD)+"'" + "\n\n")
+    else:
+      queries.write("casjobs run 'INSERT INTO mydb.Models_" + prefix + "_" + str(secCounter) + " SELECT ALL specObjID,ra,dec,z,class FROM SpecObj where specObjID="+str(l[i].iD)+"'" + "\n\n")
+    # download table locally'''
 
-  counter += 1
+    counter += 1
+  queries.write("casjobs extract -b Models_" + prefix + "_" + str(secCounter) + " -F -type CSV -d ./Models/\n\n")
+  secCounter += 1
 
-queries.write("casjobs extract -b Models_" + prefix + " -F -type CSV -d ./Models/\n\n")
+#queries.write("casjobs extract -b Models_" + prefix + " -F -type CSV -d ./Models/\n\n")
 queries.close()
