@@ -26,7 +26,7 @@ class astrObj():
         self.dec = float(dec)
         self.z = round(float(z), 2)
         self.type = objType
-        self.gID = ""
+        self.passed = False
 
 def degreeToArcSec(ra1, ra2, dec1, dec2):
    #convert all coordinates to radians
@@ -72,25 +72,21 @@ for g in galaxies:
   for tar in targets:
     
     dist = degreeToArcSec(g.ra, tar.ra, g.dec, tar.dec)
-    if dist <= max_distance and dist >= 0: #if in the neighborhood of 15 arcs or less AND positive
+    if dist <= max_distance and tar.z > g.z: #if in the neighborhood of 15 arcs or less AND greater red shift
       potentials.append(tar) # find all light sources that are farther from earth than neighboring galaxy
-
-  tempList = []
-  tempList.append(g)
   
   # see if any of these light sources have the same red shift
   for i in range(0, len(potentials)):
+    tempList = []
+    tempList.append(g)
     for j in range(i+1, len(potentials)):
-      if potentials[i].z == potentials[j].z: # if so, its a lensing incident
-        if potentials[i] not in tempList: # only add to list if not alreaday there
-          potentials[i].gID = g.iD
+      if potentials[i].z == potentials[j].z and potentials[i].passed == False: # if so, its a lensing incident
+        if len(tempList) == 1: # only add to list if not alreaday there
           tempList.append(potentials[i])
-        if potentials[j] not in tempList:
-          potentials[j].gID = g.iD
-          tempList.append(potentials[j])
-
-  if len(tempList) > 1:
-    lenses.append(tempList)
+        tempList.append(potentials[j])
+        potentials[j].passed = True
+    if len(tempList) > 1:
+      lenses.append(tempList)
 
 #print out lensing incidents
 #counter = 0
@@ -101,7 +97,7 @@ for l in lenses:
     if i == 0:
       print("LENSE -- ID: " + str(l[i].iD))
     else:
-      print("LENSED OBJECT -- ID: " + str(l[i].iD) + " Type: " + l[i].type)
+      print("LENSED OBJECT -- ID: " + str(l[i].iD) + " -- Type: " + l[i].type + " -- Z: " + str(l[i].z))
 
     
     if counter == 0:
