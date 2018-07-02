@@ -24,7 +24,7 @@ class astrObj():
         self.iD = iD
         self.ra = float(ra)
         self.dec = float(dec)
-        self.z = round(float(z), 2)
+        self.z = round(float(z), 2) + 0
         self.type = objType
         self.passed = False
 
@@ -72,9 +72,12 @@ for g in galaxies:
   for tar in targets:
     
     dist = degreeToArcSec(g.ra, tar.ra, g.dec, tar.dec)
-    if dist <= max_distance and tar.z > g.z: #if in the neighborhood of 15 arcs or less AND greater red shift
-      potentials.append(tar) # find all light sources that are farther from earth than neighboring galaxy
-  
+    if dist <= max_distance: #if in the neighborhood of 15 arcs or less AND greater red shift
+      if (tar.z > 0 and g.z > 0) or (tar.z < 0 and g.z < 0):
+        if math.fabs(tar.z) > math.fabs(g.z):
+          potentials.append(tar)
+
+
   # see if any of these light sources have the same red shift
   for i in range(0, len(potentials)):
     tempList = []
@@ -87,6 +90,9 @@ for g in galaxies:
         potentials[j].passed = True
     if len(tempList) > 1:
       lenses.append(tempList)
+
+  for i in range(0, len(potentials)): # remove all potentials from targets array
+    targets.remove(potentials[i])
 
 #print out lensing incidents
 #counter = 0
