@@ -47,8 +47,66 @@ def degreeToArcSec(ra1, ra2, dec1, dec2):
    #return in arcsecs
    theta *= 3600
 
-   return theta      
+   return theta   
 
+# basic MergeSort code taken from https://www.geeksforgeeks.org/merge-sort/
+
+def merge(arr, l, m, r):
+    n1 = m - l + 1
+    n2 = r- m
+ 
+    # create temp arrays
+    L = [0] * (n1)
+    R = [0] * (n2)
+ 
+    # Copy data to temp arrays L[] and R[]
+    for i in range(0 , n1):
+        L[i] = arr[l + i]
+ 
+    for j in range(0 , n2):
+        R[j] = arr[m + 1 + j]
+ 
+    # Merge the temp arrays back into arr[l..r]
+    i = 0     # Initial index of first subarray
+    j = 0     # Initial index of second subarray
+    k = l     # Initial index of merged subarray
+ 
+    while i < n1 and j < n2 :
+        if L[i].z <= R[j].z:
+            arr[k] = L[i]
+            i += 1
+        else:
+            arr[k] = R[j]
+            j += 1
+        k += 1
+ 
+    # Copy the remaining elements of L[], if there
+    # are any
+    while i < n1:
+        arr[k] = L[i]
+        i += 1
+        k += 1
+ 
+    # Copy the remaining elements of R[], if there
+    # are any
+    while j < n2:
+        arr[k] = R[j]
+        j += 1
+        k += 1
+ 
+# l is for left index and r is right index of the
+# sub-array of arr to be sorted
+def mergeSort(arr,l,r):
+    if l < r:
+ 
+        # Same as (l+r)/2, but avoids overflow for
+        # large l and h
+        m = (l+(r-1))/2
+ 
+        # Sort first and second halves
+        mergeSort(arr, l, m)
+        mergeSort(arr, m+1, r)
+        merge(arr, l, m, r)
 
 with open('./'+file_name) as csvfile:
     readCSV = csv.reader(csvfile, delimiter=',')
@@ -77,9 +135,9 @@ for g in galaxies:
         if math.fabs(tar.z) > math.fabs(g.z):
           potentials.append(tar)
 
-
+  
   # see if any of these light sources have the same red shift
-  for i in range(0, len(potentials)):
+  '''for i in range(0, len(potentials)):
     tempList = []
     tempList.append(g)
     for j in range(i+1, len(potentials)):
@@ -89,10 +147,28 @@ for g in galaxies:
         tempList.append(potentials[j])
         potentials[j].passed = True
     if len(tempList) > 1:
-      lenses.append(tempList)
+      lenses.append(tempList)'''
 
+  mergeSort(potentials, 0, len(potentials)-1)
+  i = 0
+  while( i < len(potentials)):
+    tempList = []
+    tempList.append(g)
+    target = potentials[i]
+    count = i
+    while(target.z == potentials[i].z):
+      tempList.append(target)
+      count += 1
+      if count < len(potentials):
+        target = potentials[count]
+      else:
+        break
+    if len(tempList) > 3:
+      lenses.append(tempList)
+    i = count
+'''
   for i in range(0, len(potentials)): # remove all potentials from targets array
-    targets.remove(potentials[i])
+    targets.remove(potentials[i])'''
 
 #print out lensing incidents
 #counter = 0
