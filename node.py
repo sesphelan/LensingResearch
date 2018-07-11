@@ -12,7 +12,7 @@ class Node(object):
     # parent: the parent node in the tree
     # level: the node level in the tree
 
-    def __init__(self, voxel, centroid=None, parent=None, level=0):
+    def __init__(self, voxel, centroid=None, parent=None, level=0, astroType="STAR"):
         self.centroidStar = centroid
         self.voxel = voxel
         self.elements = deque()
@@ -21,6 +21,7 @@ class Node(object):
         self.parent = parent
         self.level = level
         self.visited = False
+        self.type = astroType
 
     def getElements(self):
         return self.elements
@@ -108,32 +109,32 @@ class Node(object):
             if star.getRa() < centroid_voxel[0]:
                 if star.getDec() < centroid_voxel[1]:
                     quarter01.addElement(star)
-                    '''if star.border is False:
-                        star01_med_x += star.getRa()
-                        star01_med_y += star.getDec()
-                        tot_star01 += 1'''
+                    #if star.border is False:
+                    star01_med_x += star.getRa()
+                    star01_med_y += star.getDec()
+                    tot_star01 += 1
                     border_tot_star01 += 1
                 else:
                     quarter11.addElement(star)
-                    '''if star.border is False:
-                        star11_med_x += star.getRa()
-                        star11_med_y += star.getDec()
-                        tot_star11 += 1'''
+                    #if star.border is False:
+                    star11_med_x += star.getRa()
+                    star11_med_y += star.getDec()
+                    tot_star11 += 1
                     border_tot_star11 += 1
             else:
                 if star.getDec() > centroid_voxel[1]:
                     quarter12.addElement(star)
-                    '''if star.border is False:
-                        star12_med_x += star.getRa()
-                        star12_med_y += star.getDec()
-                        tot_star12 += 1'''
+                    #if star.border is False:
+                    star12_med_x += star.getRa()
+                    star12_med_y += star.getDec()
+                    tot_star12 += 1
                     border_tot_star12 += 1
                 else:
                     quarter02.addElement(star)
-                    '''if star.border is False:
-                        star02_med_x += star.getRa()
-                        star02_med_y += star.getDec()
-                        tot_star02 += 1'''
+                    #if star.border is False:
+                    star02_med_x += star.getRa()
+                    star02_med_y += star.getDec()
+                    tot_star02 += 1
                     border_tot_star02 += 1
 
         node11_cent = node12_cent = node01_cent = node02_cent = None

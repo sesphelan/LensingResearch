@@ -57,15 +57,11 @@ def build_tree(text):
 
 
 with open('CrossTest.txt', 'r') as myfile:
-	data = myfile.readlines()
-	for i in range(0, len(data)):
-		data[i] = data[i].rstrip()
+	data = myfile.read().splitlines()
+
 	tree = build_tree(data)
 	root = tree.root
+
 	for node in tree.nodes:
-		'''neighbors = tree.find_neighbors(node, root, 0.00416667, [])
-		if len(neighbors) > 0:
-			print(neighbors)'''
-		print("hi")
-
-
+		neighbors = tree.find_neighbors(node, root, 0.00416667, [])
+		print(len(neighbors))
