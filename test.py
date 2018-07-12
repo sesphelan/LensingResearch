@@ -23,14 +23,8 @@ def build_tree(text):
             geometric_centroid_ra, geometric_centroid_dec = voxel.getVoxelCentroid()
             root = Node(voxel)
         elif text[i]:
-            #border = False if  split[5].lower() == "false" else True
-            
-            '''
-            star = Element(int(split[0]), float(split[1]), float(split[2]), float(split[3]), float(split[4]),
-                           float(split[5]), float(split[6]), float(split[7]), float(split[8]),
-                           float(split[9]), float(split[10]), float(split[11]), float(split[12]), 0, border)'''
 
-            star = Element(int(split[0]), float(split[1]), float(split[2]), float(split[3]), 0)
+            star = Element(int(split[0]), float(split[1]), float(split[2]), float(split[3]), 0, split[4])
 
             root.addElement(star)
 
@@ -63,5 +57,5 @@ with open('CrossTest.txt', 'r') as myfile:
 	root = tree.root
 
 	for node in tree.nodes:
-		neighbors = tree.find_neighbors(node, root, 0.00416667, [])
-		print(len(neighbors))
+		if node.getType() == "GALAXY":
+			neighbors = tree.find_neighbors(node, root, 0.00416667, [])

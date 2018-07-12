@@ -3,6 +3,14 @@ import numpy as np
 import csv
 import math
 
+from element import Element
+from executionengine import Relation, Relations, Plan
+from node import Node
+from quadtree import QuadTree
+from query import Query
+from util import EucDist, compute_level
+from voxel import Voxel
+
 max_distance = 15 #in arcsecs, radius of light sources around galaxy
 reuseCtr = 0
 galaxies = [] #holds all galaxies
@@ -13,7 +21,7 @@ file_name = ""
 if len(sys.argv) > 1: # can use any csv file, just make sure file name is included as FIRST argument (with file type)
     file_name = sys.argv[1]
 else: # if no argument, use Classes.csv file as default
-    file_name = "Top5000.csv"
+    file_name = "CrossTest.txt"
 
 prefix = file_name.split(".")[0]
 
@@ -27,6 +35,49 @@ class astrObj():
         self.z = round(float(z), 2) + 0
         self.type = objType
         self.passed = False
+
+def build_tree(text):
+    #query = query_broadcast.value
+
+    root = None
+    geometric_centroid_ra = geometric_centroid_dec = None
+    centroid = None
+    cent_min_dist = float("inf")
+    voxel = None
+    for i in range(1, len(text)):
+        #for line in lines[1].split("\n"):
+        split = text[i].split(",")
+        if len(split) == 4:
+            min_ra, max_ra, min_dec, max_dec = split
+            voxel = Voxel(float(min_ra), float(max_ra), float(min_dec), float(max_dec))
+            geometric_centroid_ra, geometric_centroid_dec = voxel.getVoxelCentroid()
+            root = Node(voxel)
+        elif text[i]:
+
+            star = Element(int(split[0]), float(split[1]), float(split[2]), float(split[3]), 0, split[4])
+
+            root.addElement(star)
+
+            dist = EucDist(star.getRa(), geometric_centroid_ra, star.getDec(), geometric_centroid_dec)
+            if dist < cent_min_dist:
+                centroid = star
+                cent_min_dist = dist
+
+    root.setSize(len(root.getElements()))
+    root.addCentroid(centroid)
+
+    level = compute_level(voxel.getSideSize(), voxel.getHeightSize(), 0.00416667)
+    tree = QuadTree(root, level)
+    '''
+    print("\n**** Data Descriptions *****")
+    print("Sky Voxel: %s,%s,%s,%s" % (voxel.x_left, voxel.x_right, voxel.y_left, voxel.y_right))
+    print("Sky Diagonal: %s" % voxel.getDiagonal())
+    print("Tree Level: %s" % level)
+    print("Tree Elements: %s" % root.size)
+    print("Tree Leaf nodes: %s" % len(tree.nodes))
+    print("**** End Data Descriptions *****\n")
+    '''
+    return tree
 
 def degreeToArcSec(ra1, ra2, dec1, dec2):
    #convert all coordinates to radians
@@ -108,6 +159,60 @@ def mergeSort(arr,l,r):
         mergeSort(arr, m+1, r)
         merge(arr, l, m, r)
 
+with open('./'+file_name, 'r') as myfile:
+  data = myfile.read().splitlines()
+
+  tree = build_tree(data)
+  root = tree.root
+
+  queries = open("Queries.txt","w") 
+  lenses = []
+
+  for node in tree.nodes:
+    if node.getType() == "GALAXY":
+      neighbors = tree.find_neighbors(node, root, 0.00416667, [])
+      mergeSort(neighbors, 0, len(neighbors)-1)
+      
+      i = 0
+      while( i < len(neighbors)):
+        tempList = []
+        tempList.append(node.getElements()[0])
+        target = neighbors[i]
+        count = i
+        while(target.z == neighbors[i].z):
+          tempList.append(target)
+          count += 1
+          if count < len(neighbors):
+            target = neighbors[count]
+          else:
+            break
+        if len(tempList) > 3:
+          lenses.append(tempList)
+        i = count
+
+  secCounter = 0
+  for l in lenses:
+    counter = 0
+    for i in range(0, len(l)):
+      if i == 0:
+        print("LENSE -- ID: " + str(l[i].pointId))
+      else:
+        print("LENSED OBJECT -- ID: " + str(l[i].pointId) + " -- Type: " + l[i].astroType + " -- Z: " + str(l[i].z))
+
+      if counter == 0:
+      # add to myDB on CasJobs
+        queries.write("casjobs run 'SELECT ALL specObjID,ra,dec,z,class INTO mydb.Models_" + prefix + "_" + str(secCounter) + " FROM SpecObj where specObjID="+str(l[i].pointId)+"'" + "\n\n")
+      else:
+        queries.write("casjobs run 'INSERT INTO mydb.Models_" + prefix + "_" + str(secCounter) + " SELECT ALL specObjID,ra,dec,z,class FROM SpecObj where specObjID="+str(l[i].pointId)+"'" + "\n\n")
+    # download table locally
+
+  counter += 1
+  queries.write("casjobs extract -b Models_" + prefix + "_" + str(secCounter) + " -F -type CSV -d ./Models/\n\n")
+  secCounter += 1
+
+  queries.close()
+
+'''
 with open('./'+file_name) as csvfile:
     readCSV = csv.reader(csvfile, delimiter=',')
     for row in readCSV:   
@@ -135,20 +240,6 @@ for g in galaxies:
         if math.fabs(tar.z) > math.fabs(g.z):
           potentials.append(tar)
 
-  
-  # see if any of these light sources have the same red shift
-  '''for i in range(0, len(potentials)):
-    tempList = []
-    tempList.append(g)
-    for j in range(i+1, len(potentials)):
-      if potentials[i].z == potentials[j].z and potentials[i].passed == False: # if so, its a lensing incident
-        if len(tempList) == 1: # only add to list if not alreaday there
-          tempList.append(potentials[i])
-        tempList.append(potentials[j])
-        potentials[j].passed = True
-    if len(tempList) > 1:
-      lenses.append(tempList)'''
-
   mergeSort(potentials, 0, len(potentials)-1)
   i = 0
   while( i < len(potentials)):
@@ -166,12 +257,7 @@ for g in galaxies:
     if len(tempList) > 3:
       lenses.append(tempList)
     i = count
-'''
-  for i in range(0, len(potentials)): # remove all potentials from targets array
-    targets.remove(potentials[i])'''
 
-#print out lensing incidents
-#counter = 0
 secCounter = 0
 for l in lenses:
   counter = 0
@@ -187,11 +273,11 @@ for l in lenses:
       queries.write("casjobs run 'SELECT ALL specObjID,ra,dec,z,class INTO mydb.Models_" + prefix + "_" + str(secCounter) + " FROM SpecObj where specObjID="+str(l[i].iD)+"'" + "\n\n")
     else:
       queries.write("casjobs run 'INSERT INTO mydb.Models_" + prefix + "_" + str(secCounter) + " SELECT ALL specObjID,ra,dec,z,class FROM SpecObj where specObjID="+str(l[i].iD)+"'" + "\n\n")
-    # download table locally'''
+    # download table locally
 
-    counter += 1
+  counter += 1
   queries.write("casjobs extract -b Models_" + prefix + "_" + str(secCounter) + " -F -type CSV -d ./Models/\n\n")
   secCounter += 1
 
-#queries.write("casjobs extract -b Models_" + prefix + " -F -type CSV -d ./Models/\n\n")
 queries.close()
+'''
