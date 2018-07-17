@@ -2,6 +2,7 @@ import sys
 import numpy as np
 import csv
 import math
+import threading
 
 from element import Element
 from executionengine import Relation, Relations, Plan
@@ -159,125 +160,62 @@ def mergeSort(arr,l,r):
         mergeSort(arr, m+1, r)
         merge(arr, l, m, r)
 
-with open('./'+file_name, 'r') as myfile:
-  data = myfile.read().splitlines()
+def run(file_name):
+  with open('./'+file_name, 'r') as myfile:
+    data = myfile.read().splitlines()
 
-  tree = build_tree(data)
-  root = tree.root
+    tree = build_tree(data)
+    root = tree.root
 
-  queries = open("Queries.txt","w") 
-  lenses = []
+    queries = open("Queries.txt","w") 
+    lenses = []
 
-  for node in tree.nodes:
-    if node.getType() == "GALAXY":
-      neighbors = tree.find_neighbors(node, root, 0.00416667, [])
-      mergeSort(neighbors, 0, len(neighbors)-1)
-      
-      i = 0
-      while( i < len(neighbors)):
-        tempList = []
-        tempList.append(node.getElements()[0])
-        target = neighbors[i]
-        count = i
-        while(target.z == neighbors[i].z):
-          tempList.append(target)
-          count += 1
-          if count < len(neighbors):
-            target = neighbors[count]
-          else:
-            break
-        if len(tempList) > 3:
-          lenses.append(tempList)
-        i = count
+    for node in tree.nodes:
+      if node.getType() == "GALAXY":
+        neighbors = tree.find_neighbors(node, root, 0.00416667, [])
+        mergeSort(neighbors, 0, len(neighbors)-1)
+        
+        i = 0
+        while( i < len(neighbors)):
+          tempList = []
+          tempList.append(node.getElements()[0])
+          target = neighbors[i]
+          count = i
+          while(target.z == neighbors[i].z):
+            tempList.append(target)
+            count += 1
+            if count < len(neighbors):
+              target = neighbors[count]
+            else:
+              break
+          if len(tempList) > 3:
+            lenses.append(tempList)
+          i = count
 
-  secCounter = 0
-  for l in lenses:
-    counter = 0
-    for i in range(0, len(l)):
-      if i == 0:
-        print("LENSE -- ID: " + str(l[i].pointId))
-      else:
-        print("LENSED OBJECT -- ID: " + str(l[i].pointId) + " -- Type: " + l[i].astroType + " -- Z: " + str(l[i].z))
+    secCounter = 0
+    for l in lenses:
+      counter = 0
+      for i in range(0, len(l)):
+        if i == 0:
+          print("LENSE -- ID: " + str(l[i].pointId))
+        else:
+          print("LENSED OBJECT -- ID: " + str(l[i].pointId) + " -- Type: " + l[i].astroType + " -- Z: " + str(l[i].z))
 
-      if counter == 0:
-      # add to myDB on CasJobs
-        queries.write("casjobs run 'SELECT ALL specObjID,ra,dec,z,class INTO mydb.Models_" + prefix + "_" + str(secCounter) + " FROM SpecObj where specObjID="+str(l[i].pointId)+"'" + "\n\n")
-      else:
-        queries.write("casjobs run 'INSERT INTO mydb.Models_" + prefix + "_" + str(secCounter) + " SELECT ALL specObjID,ra,dec,z,class FROM SpecObj where specObjID="+str(l[i].pointId)+"'" + "\n\n")
-    # download table locally
+        if counter == 0:
+        # add to myDB on CasJobs
+          queries.write("casjobs run 'SELECT ALL specObjID,ra,dec,z,class INTO mydb.Models_" + prefix + "_" + str(secCounter) + " FROM SpecObj where specObjID="+str(l[i].pointId)+"'" + "\n\n")
+        else:
+          queries.write("casjobs run 'INSERT INTO mydb.Models_" + prefix + "_" + str(secCounter) + " SELECT ALL specObjID,ra,dec,z,class FROM SpecObj where specObjID="+str(l[i].pointId)+"'" + "\n\n")
+      # download table locally
 
-  counter += 1
-  queries.write("casjobs extract -b Models_" + prefix + "_" + str(secCounter) + " -F -type CSV -d ./Models/\n\n")
-  secCounter += 1
+      counter += 1
+      queries.write("casjobs extract -b Models_" + prefix + "_" + str(secCounter) + " -F -type CSV -d ./Models/\n\n")
+      secCounter += 1
 
-  queries.close()
+    queries.close()
 
-'''
-with open('./'+file_name) as csvfile:
-    readCSV = csv.reader(csvfile, delimiter=',')
-    for row in readCSV:   
-    	if (reuseCtr!=0):
-            obj = astrObj(row[0], row[1], row[2], row[3], row[4])
-            if row[4] == 'GALAXY': #store all Galaxies in a separate array
-              galaxies.append(obj)
-            else: # store all non-galaxies in targets
-              targets.append(obj) 
-    	reuseCtr+=1
+#run(file_name)
 
-queries = open("Queries.txt","w") 
-
-lenses = []
-
-# go through each galaxy
-for g in galaxies:
-  #search through all light sources
-  potentials = [] #lensing candidates
-  for tar in targets:
-    
-    dist = degreeToArcSec(g.ra, tar.ra, g.dec, tar.dec)
-    if dist <= max_distance: #if in the neighborhood of 15 arcs or less AND greater red shift
-      if (tar.z > 0 and g.z > 0) or (tar.z < 0 and g.z < 0):
-        if math.fabs(tar.z) > math.fabs(g.z):
-          potentials.append(tar)
-
-  mergeSort(potentials, 0, len(potentials)-1)
-  i = 0
-  while( i < len(potentials)):
-    tempList = []
-    tempList.append(g)
-    target = potentials[i]
-    count = i
-    while(target.z == potentials[i].z):
-      tempList.append(target)
-      count += 1
-      if count < len(potentials):
-        target = potentials[count]
-      else:
-        break
-    if len(tempList) > 3:
-      lenses.append(tempList)
-    i = count
-
-secCounter = 0
-for l in lenses:
-  counter = 0
-  for i in range(0, len(l)):
-    if i == 0:
-      print("LENSE -- ID: " + str(l[i].iD))
-    else:
-      print("LENSED OBJECT -- ID: " + str(l[i].iD) + " -- Type: " + l[i].type + " -- Z: " + str(l[i].z))
-
-    
-    if counter == 0:
-      # add to myDB on CasJobs
-      queries.write("casjobs run 'SELECT ALL specObjID,ra,dec,z,class INTO mydb.Models_" + prefix + "_" + str(secCounter) + " FROM SpecObj where specObjID="+str(l[i].iD)+"'" + "\n\n")
-    else:
-      queries.write("casjobs run 'INSERT INTO mydb.Models_" + prefix + "_" + str(secCounter) + " SELECT ALL specObjID,ra,dec,z,class FROM SpecObj where specObjID="+str(l[i].iD)+"'" + "\n\n")
-    # download table locally
-
-  counter += 1
-  queries.write("casjobs extract -b Models_" + prefix + "_" + str(secCounter) + " -F -type CSV -d ./Models/\n\n")
-  secCounter += 1
-
-queries.close()
-'''
+for i in range(4):
+  t = threading.Thread(target=run, args=(prefix + "_partition_" + str(i),))
+  t.start()
