@@ -182,7 +182,8 @@ def run(file_name):
           target = neighbors[i]
           count = i
           while(target.z == neighbors[i].z):
-            tempList.append(target)
+            if target.getType() != "GALAXY":
+              tempList.append(target)
             count += 1
             if count < len(neighbors):
               target = neighbors[count]
@@ -191,10 +192,8 @@ def run(file_name):
           if len(tempList) > 3:
             lenses.append(tempList)
           i = count
-
-    secCounter = 0
+    counter = 0
     for l in lenses:
-      counter = 0
       for i in range(0, len(l)):
         if i == 0:
           print("LENSE -- ID: " + str(l[i].pointId))
@@ -203,19 +202,20 @@ def run(file_name):
 
         if counter == 0:
         # add to myDB on CasJobs
-          queries.write("casjobs run 'SELECT ALL specObjID,ra,dec,z,class INTO mydb.Models_" + prefix + "_" + str(secCounter) + " FROM SpecObj where specObjID="+str(l[i].pointId)+"'" + "\n\n")
+          queries.write("casjobs run 'SELECT ALL specObjID,ra,dec,z,class INTO mydb.Models_" + prefix + " FROM SpecObj where specObjID="+str(l[i].pointId)+"'" + "\n\n")
         else:
-          queries.write("casjobs run 'INSERT INTO mydb.Models_" + prefix + "_" + str(secCounter) + " SELECT ALL specObjID,ra,dec,z,class FROM SpecObj where specObjID="+str(l[i].pointId)+"'" + "\n\n")
+          queries.write("casjobs run 'INSERT INTO mydb.Models_" + prefix + " SELECT ALL specObjID,ra,dec,z,class FROM SpecObj where specObjID="+str(l[i].pointId)+"'" + "\n\n")
       # download table locally
+        counter += 1
 
-      counter += 1
-      queries.write("casjobs extract -b Models_" + prefix + "_" + str(secCounter) + " -F -type CSV -d ./Models/\n\n")
-      secCounter += 1
 
-    queries.close()
 
-#run(file_name)
+    queries.write("casjobs extract -b Models_" + prefix + " -F -type CSV -d ./Models/\n\n")
+    
 
+run(file_name)
+'''
 for i in range(4):
   t = threading.Thread(target=run, args=(prefix + "_partition_" + str(i),))
   t.start()
+'''
