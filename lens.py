@@ -34,9 +34,13 @@ class astrObj():
         self.ra = float(ra)
         self.dec = float(dec)
         self.z = round(float(z), 2) + 0
-        self.type = objType
-        self.passed = False
+        self.type = objType # galaxy, QSO, or star
+        self.passed = False #boolean used in parsing objects
 
+'''
+Returns standard Quadtree using an array of strings generated from the
+input text file. 
+'''
 def build_tree(text):
     #query = query_broadcast.value
 
@@ -45,7 +49,7 @@ def build_tree(text):
     centroid = None
     cent_min_dist = float("inf")
     voxel = None
-    for i in range(1, len(text)):
+    for i in range(1, len(text)): # skip first line
         #for line in lines[1].split("\n"):
         split = text[i].split(",")
         if len(split) == 4:
@@ -69,40 +73,12 @@ def build_tree(text):
 
     level = compute_level(voxel.getSideSize(), voxel.getHeightSize(), 0.00416667)
     tree = QuadTree(root, level)
-    '''
-    print("\n**** Data Descriptions *****")
-    print("Sky Voxel: %s,%s,%s,%s" % (voxel.x_left, voxel.x_right, voxel.y_left, voxel.y_right))
-    print("Sky Diagonal: %s" % voxel.getDiagonal())
-    print("Tree Level: %s" % level)
-    print("Tree Elements: %s" % root.size)
-    print("Tree Leaf nodes: %s" % len(tree.nodes))
-    print("**** End Data Descriptions *****\n")
-    '''
-    return tree
-
-def degreeToArcSec(ra1, ra2, dec1, dec2):
-   #convert all coordinates to radians
-   
-   ra1 = math.radians(ra1)
-   ra2 = math.radians(ra2)
-   dec1 = math.radians(dec1)
-   dec2 = math.radians(dec2)
-
-   #calculate theta based on equation listed at https://physics.stackexchange.com/questions/224950/how-can-i-convert-right-ascension-and-declination-to-distances
-   #cos(theta) = sin(phi)sin(gamma) + cos(phi)cos(gamma)sin(beta-alpha)
-   
-   theta = math.acos(math.sin(dec1)*math.sin(dec2) + math.cos(dec1)*math.cos(dec2)*math.cos(ra1-ra2))
-   #theta = math.acos(cos) #calculates theta
-
-   #convert back to degrees
-   theta = math.degrees(theta)
-   #return in arcsecs
-   theta *= 3600
-
-   return theta   
+    
+    return tree  
 
 # basic MergeSort code taken from https://www.geeksforgeeks.org/merge-sort/
-
+# sorts by red shift attribute in object
+# takes in array to work on, lower and upper bounds 
 def merge(arr, l, m, r):
     n1 = m - l + 1
     n2 = r- m
@@ -148,6 +124,7 @@ def merge(arr, l, m, r):
  
 # l is for left index and r is right index of the
 # sub-array of arr to be sorted
+# does NOT return an array
 def mergeSort(arr,l,r):
     if l < r:
  
@@ -160,28 +137,30 @@ def mergeSort(arr,l,r):
         mergeSort(arr, m+1, r)
         merge(arr, l, m, r)
 
+# MAIN function of program (no return value)
+# takes only string of input file name
 def run(file_name):
   with open('./'+file_name, 'r') as myfile:
-    data = myfile.read().splitlines()
+    data = myfile.read().splitlines() # create string list from txt file
 
-    tree = build_tree(data)
+    tree = build_tree(data) #build tree with it
     root = tree.root
 
-    queries = open("Queries.txt","w") 
+    queries = open("Queries.txt","w") # file that stores all queries
     lenses = []
 
     for node in tree.nodes:
-      if node.getType() == "GALAXY":
-        neighbors = tree.find_neighbors(node, root, 0.00416667, [])
-        mergeSort(neighbors, 0, len(neighbors)-1)
+      if node.getType() == "GALAXY": #only run neighboring query on galaxies
+        neighbors = tree.find_neighbors(node, root, 0.00416667, []) # 15 arcsec limit
+        mergeSort(neighbors, 0, len(neighbors)-1) # mergesort for efficiency of finding neighbors
         
-        i = 0
+        i = 0 # find all lensing incidents by parsing Neighbors
         while( i < len(neighbors)):
           tempList = []
           tempList.append(node.getElements()[0])
           target = neighbors[i]
           count = i
-          while(target.z == neighbors[i].z):
+          while(target.z == neighbors[i].z): # same red shift needed
             if target.getType() != "GALAXY":
               tempList.append(target)
             count += 1
@@ -189,11 +168,11 @@ def run(file_name):
               target = neighbors[count]
             else:
               break
-          if len(tempList) > 3:
+          if len(tempList) > 3: # need at least 3 for a lensing incident
             lenses.append(tempList)
           i = count
     counter = 0
-    for l in lenses:
+    for l in lenses: # print to console
       for i in range(0, len(l)):
         if i == 0:
           print("LENSE -- ID: " + str(l[i].pointId))
@@ -213,7 +192,10 @@ def run(file_name):
     queries.write("casjobs extract -b Models_" + prefix + " -F -type CSV -d ./Models/\n\n")
     
 
-run(file_name)
+run(file_name) # run MAIN function
+
+#  FOR THREADING PURPOSES, UNCOMMENT
+
 '''
 for i in range(4):
   t = threading.Thread(target=run, args=(prefix + "_partition_" + str(i),))
