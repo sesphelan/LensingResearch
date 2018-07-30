@@ -40,6 +40,11 @@ class astrObj():
 '''
 Returns standard Quadtree using an array of strings generated from the
 input text file. 
+
+text input: array of strings holding entire input file
+  each element holds a line of text
+
+output: quadtree with all nodes created, structured
 '''
 def build_tree(text):
     #query = query_broadcast.value
@@ -79,6 +84,8 @@ def build_tree(text):
 # basic MergeSort code taken from https://www.geeksforgeeks.org/merge-sort/
 # sorts by red shift attribute in object
 # takes in array to work on, lower and upper bounds 
+# all inputs come from mergeSort() function below
+# no output
 def merge(arr, l, m, r):
     n1 = m - l + 1
     n2 = r- m
@@ -124,7 +131,7 @@ def merge(arr, l, m, r):
  
 # l is for left index and r is right index of the
 # sub-array of arr to be sorted
-# does NOT return an array
+# does NOT return an array, works on array passed in
 def mergeSort(arr,l,r):
     if l < r:
  
@@ -139,6 +146,8 @@ def mergeSort(arr,l,r):
 
 # MAIN function of program (no return value)
 # takes only string of input file name
+# prints results of query to std output and generates series of queries
+# to be run with command line CAS tool
 def run(file_name):
   with open('./'+file_name, 'r') as myfile:
     data = myfile.read().splitlines() # create string list from txt file
@@ -150,7 +159,7 @@ def run(file_name):
     lenses = []
 
     for node in tree.nodes:
-      if node.getType() == "GALAXY": #only run neighboring query on galaxies
+      if node.getType() == "3": #only run neighboring query on galaxies
         neighbors = tree.find_neighbors(node, root, 0.00416667, []) # 15 arcsec limit
         mergeSort(neighbors, 0, len(neighbors)-1) # mergesort for efficiency of finding neighbors
         
@@ -161,7 +170,7 @@ def run(file_name):
           target = neighbors[i]
           count = i
           while(target.z == neighbors[i].z): # same red shift needed
-            if target.getType() != "GALAXY":
+            if target.getType() != "3":
               tempList.append(target)
             count += 1
             if count < len(neighbors):
@@ -181,9 +190,9 @@ def run(file_name):
 
         if counter == 0:
         # add to myDB on CasJobs
-          queries.write("casjobs run 'SELECT ALL specObjID,ra,dec,z,class INTO mydb.Models_" + prefix + " FROM SpecObj where specObjID="+str(l[i].pointId)+"'" + "\n\n")
+          queries.write("casjobs run 'SELECT ALL objID,ra,dec,z,type INTO mydb.Models_" + prefix + " FROM PhotoObj where objID="+str(l[i].pointId)+"'" + "\n\n")
         else:
-          queries.write("casjobs run 'INSERT INTO mydb.Models_" + prefix + " SELECT ALL specObjID,ra,dec,z,class FROM SpecObj where specObjID="+str(l[i].pointId)+"'" + "\n\n")
+          queries.write("casjobs run 'INSERT INTO mydb.Models_" + prefix + " SELECT ALL objID,ra,dec,z,type FROM PhotoObj where objID="+str(l[i].pointId)+"'" + "\n\n")
       # download table locally
         counter += 1
 
@@ -194,7 +203,7 @@ def run(file_name):
 
 run(file_name) # run MAIN function
 
-#  FOR THREADING PURPOSES, UNCOMMENT
+#  FOR THREADING PURPOSES, UNCOMMENT lines below
 
 '''
 for i in range(4):
