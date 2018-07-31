@@ -18,7 +18,7 @@ files = [] # holds all files created by script
 partitions = []
 
 for i in range(0, number):
-	f = open(prefix + "_partition_" + str(i), "w+")
+	f = open(prefix + "_" + str(i), "w+")
 	f.write("specObjID,ra,dec,z,class\n")
 	files.append(f)
 
@@ -53,7 +53,7 @@ for i in range(0, number):
 	f.close()
 
 for i in range(0, number):
-	name = prefix + "_partition_" + str(i)
+	name = prefix + "_" + str(i)
 	arr = FindMinMax(name)
 	if len(arr) > 0:
 		f = open(name, "r")
