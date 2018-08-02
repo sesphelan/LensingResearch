@@ -23,5 +23,17 @@ and all subsequent elements are the lensing incidents that share the same red sh
 
 I print the Lenses list to standard output when all parsing has finished. I also create a list of queries in 
 a text file titled "Queries.txt" (does not need to be created before first run). Once the script finishes, copy and paste all of the contents in this text
-file into the terminal to create an object in the "mydb" remotely, as well as to create an object locally in a folder titled "Models." All lensing incidents
+file into the terminal to create an object in your online "mydb" remotely, as well as to create an object locally in a folder titled "Models." All lensing incidents
 will be stored in a single csv file.
+
+Detailed descriptions and comments for each function can be found in the lens.py file.
+
+I have included two separate helper scripts, FindMinMax.py and partition.py. The first will calculate the minimum and max RA and DEC for a given data set. Input the desired
+txt file holding the data set by including its name as a command line parameter.
+
+Then, once these mins and maxes are added to the original text file as its second line, run partition.py on the same text file to partition the data into as many partitions
+as desired. This takes two command line parameters, the name of the text file to be partitioned, and the number of partitions desired (defaults to 5). If no partitions are
+needed, these two scripts do not need to be regarded.
+
+The default text file, CrossTest.txt only holds the data of a known Einstein cross, and was used to test the accuracy of my solution. The file OLDLens.py contains another working
+solution, but without a quadtree (and is therefore much less efficient). All other files were provided to me by Fabio in the creation of the Quadtree.
