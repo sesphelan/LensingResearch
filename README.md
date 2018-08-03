@@ -9,7 +9,7 @@ Simply run with the command: "python lens.py" to run script on the default txt f
 
 If a different txt file wants to be used, ensure that this file matches the exact schema of the CrossTest.txt file, and include the name of the file
 as a command line argument (i.e. run "python lens.py TopMillion.txt" to run the script on a file titled TopMillion.txt). The schema for the CrossTest.txt file
-only includes specObjID, ra, dec, z, and class (in that exact order) with a comma as a delimiter.
+only includes objID, ra, dec, z, and type (in that exact order) with a comma as a delimiter.
 
 It is also important to note that the second line of the txt file must contain only four values: the minimum RA of the data set, the max RA, min dec, and max dec.
 
@@ -33,7 +33,7 @@ txt file holding the data set by including its name as a command line parameter.
 
 Then, once these mins and maxes are added to the original text file as its second line, run partition.py on the same text file to partition the data into as many partitions
 as desired. This takes two command line parameters, the name of the text file to be partitioned, and the number of partitions desired (defaults to 5). If no partitions are
-needed, these two scripts do not need to be regarded.
+needed, these two scripts do not need to be regarded. This file partitions based on ranges of RA.
 
 The default text file, CrossTest.txt only holds the data of a known Einstein cross, and was used to test the accuracy of my solution. The file OLDLens.py contains another working
 solution, but without a quadtree (and is therefore much less efficient). All other files were provided to me by Fabio in the creation of the Quadtree.
